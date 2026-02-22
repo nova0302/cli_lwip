@@ -7,9 +7,9 @@
  * Created: 토  1월 31 16:22:24 2026 (+0900)
  * Version: 
  * Package-Requires: ()
- * Last-Updated: 목  2월 19 17:32:49 2026 (+0900)
+ * Last-Updated: 일  2월 22 22:10:52 2026 (+0900)
  *           By: Sanglae Kim
- *     Update #: 11
+ *     Update #: 12
  * URL: 
  * Doc URL: 
  * Keywords: 
@@ -126,6 +126,7 @@ void tc2_lwip_init(void)
 
   /* start the application (web server, rxtest, txtest, etc..) */
   start_application();
+  //start_tcp_client();
 
 
 }

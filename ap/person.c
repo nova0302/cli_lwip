@@ -1,15 +1,15 @@
-/* tc2.c --- 
+/* person.c --- 
  * 
- * Filename: tc2.c
+ * Filename: person.c
  * Description: 
  * Author: Sanglae Kim
  * Maintainer: 
- * Created: 토  1월 24 23:18:01 2026 (+0900)
+ * Created: 금  2월 20 16:52:19 2026 (+0900)
  * Version: 
  * Package-Requires: ()
- * Last-Updated: 금  2월 20 17:28:56 2026 (+0900)
+ * Last-Updated: 금  2월 20 17:32:03 2026 (+0900)
  *           By: Sanglae Kim
- *     Update #: 20
+ *     Update #: 7
  * URL: 
  * Doc URL: 
  * Keywords: 
@@ -43,31 +43,29 @@
  */
 
 /* Code: */
-#include "cli.h"
+#include <string.h>
 #include "person.h"
-#include "tc2.h"
 
-void tc2 (cli_args_t *args){
+static StPerson stPerson={"Peter", 23};
 
-  (void)args;
+//bool getPerson(StPerson **ppStPerson){
+//
+//  bool ret=false; 
+//  if(&stPerson){
+//    *ppStPerson = &stPerson;
+//    ret = true;
+//  }
+//  return ret;
+//}
 
-  StPerson *pStPerson = getPerson();
-  //getPerson(&pStPerson);
-  if(pStPerson){
-    cliPrintf("Name: %s, Age: %d\r\n",
-              pStPerson->pcName,
-              pStPerson->nAge);
-  }
-  setPerson(pStPerson, "Danny", 21);
-
-  if(pStPerson){
-    cliPrintf("Name: %s, Age: %d\r\n",
-              pStPerson->pcName,
-              pStPerson->nAge);
-  }
-
-
+StPerson* getPerson(void){
+  return &stPerson;
 }
 
+//void setPerson(StPerson *pStPerson, char *pName, uint32_t nAge);
+void setPerson(StPerson *pStPerson, char *pcName, uint32_t nAge){
+  strncpy(pStPerson->pcName, pcName, strlen(pcName));
+  pStPerson->nAge = nAge;
+}
 
-/* tc2.c ends here */
+/* person.c ends here */

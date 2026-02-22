@@ -119,10 +119,11 @@ bool cliInit(void)
   cliAdd("help", cliShowList);
   cliAdd("md"  , cliMemoryDump);
   cliAdd("test", test);
+  cliAdd("tc2", tc2);
   cliAdd("rm"  , rm);
   cliAdd("ls"  , ls);
   cliAdd("cat"  , cat);
-  cliAdd("save"  , save);
+  //cliAdd("save"  , save);
 
   return true;
 }

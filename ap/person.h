@@ -1,15 +1,15 @@
-/* tc2.c --- 
+/* person.h --- 
  * 
- * Filename: tc2.c
+ * Filename: person.h
  * Description: 
  * Author: Sanglae Kim
  * Maintainer: 
- * Created: 토  1월 24 23:18:01 2026 (+0900)
+ * Created: 금  2월 20 16:51:36 2026 (+0900)
  * Version: 
  * Package-Requires: ()
- * Last-Updated: 금  2월 20 17:28:56 2026 (+0900)
+ * Last-Updated: 금  2월 20 17:31:06 2026 (+0900)
  *           By: Sanglae Kim
- *     Update #: 20
+ *     Update #: 11
  * URL: 
  * Doc URL: 
  * Keywords: 
@@ -43,31 +43,20 @@
  */
 
 /* Code: */
-#include "cli.h"
-#include "person.h"
-#include "tc2.h"
 
-void tc2 (cli_args_t *args){
+#include <stdint.h>
+#include <stdbool.h>
 
-  (void)args;
-
-  StPerson *pStPerson = getPerson();
-  //getPerson(&pStPerson);
-  if(pStPerson){
-    cliPrintf("Name: %s, Age: %d\r\n",
-              pStPerson->pcName,
-              pStPerson->nAge);
-  }
-  setPerson(pStPerson, "Danny", 21);
-
-  if(pStPerson){
-    cliPrintf("Name: %s, Age: %d\r\n",
-              pStPerson->pcName,
-              pStPerson->nAge);
-  }
+#define NULL (0)
 
 
-}
+typedef struct Person{
+  char pcName[16];
+  uint32_t nAge;
+}StPerson;
 
+//bool getPerson(StPerson **ppStPerson);
+StPerson* getPerson(void);
+void setPerson(StPerson *pStPerson, char *pcName, uint32_t nAge);
 
-/* tc2.c ends here */
+/* person.h ends here */

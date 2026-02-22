@@ -7,9 +7,9 @@
  * Created: 일  1월 25 21:58:24 2026 (+0900)
  * Version: 
  * Package-Requires: ()
- * Last-Updated: 일  1월 25 22:31:16 2026 (+0900)
+ * Last-Updated: 금  2월 20 17:01:03 2026 (+0900)
  *           By: Sanglae Kim
- *     Update #: 2
+ *     Update #: 11
  * URL: 
  * Doc URL: 
  * Keywords: 
@@ -43,6 +43,11 @@
  */
 
 /* Code: */
+#ifndef TC2_H
+#define TC2_H
+
+#include <stdint.h>
+#include <stdbool.h>
 
 #define NUM_BIT_LINE (2048)
 
@@ -51,6 +56,8 @@ typedef struct {
   double X[NUM_BIT_LINE];
 }levels_t;
 
-void save(cli_args_t *args);
+void tc2 (cli_args_t *args);
+
+#endif /* TC2_H */
 
 /* tc2.h ends here */
