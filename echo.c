@@ -35,7 +35,8 @@
 #include "xil_printf.h"
 #endif
 
-char cMsge[] = "Hello World";
+static char cMsge[] = "Hello World";
+struct tcp_pcb *global_pcb = NULL;
 
 err_t recv_callback(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err);
 
@@ -84,6 +85,7 @@ err_t recv_callback(void *arg, struct tcp_pcb *tpcb,
 err_t accept_callback(void *arg, struct tcp_pcb *newpcb, err_t err)
 {
   static int connection = 1;
+  global_pcb = newpcb;
 
   /* set the receive callback for this connection */
   tcp_recv(newpcb, recv_callback);
@@ -95,13 +97,13 @@ err_t accept_callback(void *arg, struct tcp_pcb *newpcb, err_t err)
   /* increment for subsequent accepted connections */
   connection++;
 
+
   return ERR_OK;
 }
 
-struct tcp_pcb *pcb;
-
 int start_application()
 {
+  struct tcp_pcb *pcb;
   err_t err;
   unsigned port = 7;
 
@@ -136,6 +138,7 @@ int start_application()
 
   return 0;
 }
+
 
 //
 //#include "lwip/tcp.h"

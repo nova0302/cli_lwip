@@ -7,9 +7,9 @@
  * Created: 토  1월 24 23:18:01 2026 (+0900)
  * Version: 
  * Package-Requires: ()
- * Last-Updated: 금  2월 20 17:28:56 2026 (+0900)
+ * Last-Updated: 토  2월 28 20:50:57 2026 (+0900)
  *           By: Sanglae Kim
- *     Update #: 20
+ *     Update #: 36
  * URL: 
  * Doc URL: 
  * Keywords: 
@@ -43,13 +43,22 @@
  */
 
 /* Code: */
+#include <string.h>
+
+#include "lwip/tcp.h"
+
 #include "cli.h"
 #include "person.h"
 #include "tc2.h"
 
+void send_message(const char *msg);
+
+extern struct tcp_pcb *global_pcb; 
+
 void tc2 (cli_args_t *args){
 
   (void)args;
+  static uint32_t nTxCnt = 0;
 
   StPerson *pStPerson = getPerson();
   //getPerson(&pStPerson);
@@ -65,9 +74,27 @@ void tc2 (cli_args_t *args){
               pStPerson->pcName,
               pStPerson->nAge);
   }
-
+  char msg[16];
+  sprintf(msg,"%d - HelloWorld\n", nTxCnt++);
+  send_message(msg);
 
 }
 
+void send_message(const char *msg) {
+
+  if (global_pcb == NULL) {
+    xil_printf("no space in tcp_sndbuf\n\r");
+    return;
+  }
+
+  if (tcp_sndbuf(global_pcb) > 0) {
+    tcp_write(global_pcb, msg, strlen(msg), TCP_WRITE_FLAG_COPY);
+  }
+
+//err_t err = tcp_write(global_pcb, msg, strlen(msg), TCP_WRITE_FLAG_COPY);
+//if (err == ERR_OK) {
+//  tcp_output(global_pcb); // Flush immediately
+//}
+}
 
 /* tc2.c ends here */
