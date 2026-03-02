@@ -65,6 +65,9 @@ err_t recv_callback(void *arg, struct tcp_pcb *tpcb,
   /* indicate that the packet has been received */
   tcp_recved(tpcb, p->len);
   xil_printf("Msg from host: %s\n\r", (char*)p->payload);
+  char *pcPayload = (char*)p->payload;
+  if(strcmp("reade", pcPayload) == 0) cliPrintf("[READE]from svr: %s\r\n", pcPayload);
+  if(strcmp("readb", pcPayload) == 0) cliPrintf("[READB]from svr: %s\r\n", pcPayload);
 
   /* echo back the payload */
   /* in this case, we assume that the payload is < TCP_SND_BUF */
