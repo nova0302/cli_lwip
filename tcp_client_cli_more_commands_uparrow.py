@@ -20,14 +20,17 @@ class TCPClient:
         
         # Command schema: (arg_count, help_text)
         self.cmd_schema = {
-            "reade": (2, "reade <addr> <bytes>"),
-            "readb": (2, "readb <addr> <bytes>"),
-            "readv": (2, "readv <addr> <bytes>"),
-            "apgm":  (2, "apgm <addr> <value>"),
-            "dpgm":  (2, "dpgm <addr> <value>"),
-            "bpgm":  (2, "bpgm <addr> <value>"),
-            "erase": (1, "erase <sector_id>"),
-            "por":   (0, "por")
+            "reade" : (2, "reade <addr> <bytes>"),
+            "readb" : (2, "readb <addr> <bytes>"),
+            "readva": (2, "readva <addr> <nVfyData>"),
+            "apgm"  : (2, "apgm <addr> <value>"),
+            "dpgm"  : (2, "dpgm <addr> <value>"),
+            "bpgm"  : (2, "bpgm <addr> <value>"),
+            "erase" : (1, "erase <sector_id>"),
+            "ce"   :  (1, "por [on/off]"),
+            "por"   : (0, "por"),
+            "h"     : (0, "help"),
+            "i"     : (0, "init")
         }
         self._setup_readline()
 
@@ -73,6 +76,7 @@ class TCPClient:
             return
 
         payload = {"cmd": cmd_name, "args": args}
+        print(f'tx : {payload}')
         return self._send_json(payload)
 
     def _send_json(self, data):
@@ -95,15 +99,16 @@ class TCPClient:
         try:
             while True:
                 # input() now automatically uses the readline buffer
-                user_input = input("HW_CTRL > ").strip()
+                user_input = input("tc2[b]> ").strip()
                 
-                if user_input.lower() in ['exit', 'quit']:
+                if user_input.lower() in ['exit', 'q']:
                     break
                 if not user_input:
                     continue
                 
                 result = self.execute_command(user_input)
                 if result:
+                    print("rx:")
                     print(json.dumps(result, indent=2) if isinstance(result, dict) else result)
         except (KeyboardInterrupt, EOFError):
             print("\nExiting...")
@@ -115,8 +120,8 @@ class TCPClient:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("host", nargs='?', default="127.0.0.1")
-    parser.add_argument("port", nargs='?', type=int, default=65432)
+    parser.add_argument("host", nargs='?', default="192.168.123.10")
+    parser.add_argument("port", nargs='?', type=int, default=7)
     cl_args = parser.parse_args()
 
     client = TCPClient(cl_args.host, cl_args.port)
