@@ -7,9 +7,9 @@
 # Created: Thu Mar  5 18:31:43 2026 (+0900)
 # Version: 
 # Package-Requires: ()
-# Last-Updated: Thu Mar  5 19:17:32 2026 (+0900)
+# Last-Updated: Fri Mar  6 11:01:50 2026 (+0900)
 #           By: Sanglae Kim
-#     Update #: 4
+#     Update #: 5
 # URL: 
 # Doc URL: 
 # Keywords: 
@@ -290,7 +290,7 @@ class TCPClient:
                     break
                 if not user_input:
                     continue
-                if user_input in ("h", "help"):
+                if user_input in ("lh", "help"):
                     for k, v in self.cmd_schema.items():
                         print(f"  {k:6s} : {v[1]}")
                     continue
