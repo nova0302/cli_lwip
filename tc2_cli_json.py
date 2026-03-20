@@ -7,9 +7,9 @@
 # Created: Fri Mar  6 14:42:28 2026 (+0900)
 # Version: 
 # Package-Requires: ()
-# Last-Updated: Fri Mar  6 15:51:57 2026 (+0900)
+# Last-Updated: Fri Mar 20 17:53:22 2026 (+0900)
 #           By: Sanglae Kim
-#     Update #: 4
+#     Update #: 44
 # URL: 
 # Doc URL: 
 # Keywords: 
@@ -65,9 +65,16 @@ DEFAULT_NXADDR = 0           # 0 .. 1280
 DEFAULT_NVCG   = 0xDEF       # (4.32[V] assumed default in allowed range 0x50F .. 0xFFF
 DEFAULT_REPEAT = 1           # 1 .. 64
 DEFAULT_FILE   = "file256.bin"
-PAYLOAD_BYTES  = 256
+PAYLOAD_BYTES  = 256         # 256 * 8 = 2048 bit lines
 HEX_LEN        = PAYLOAD_BYTES * 2
 HEX256_RE      = re.compile(r'^[0-9a-fA-F]{' + str(HEX_LEN) + r'}$')
+
+def b64_to_bytes(b64str):
+    try:
+        return base64.b64decode(b64str)
+    except Exception as e:
+        print(f"[!] Base64 decode error: {e}")
+        return None
 
 def _int_from_token(tok: str) -> int:
     """Parse token as int; accepts decimal or 0x... hex."""
@@ -94,11 +101,15 @@ class TCPClient:
         # Command schema: (min_args, max_args, help_text)
         self.cmd_schema = {
             # unchanged commands
-            "reade" : (2, 2, "reade <addr> <bytes>"),
+            "readn" : (0, 3, "readn [nrTagStart=0] [nrTagNum=1] [nrReg=0xFF]"),
+            "reade" : (0, 2, "reade [nxAddr=0] [MAIN/NVR/ARRDN/ARRCOL]"),
+            # "reade" : (2, 2, "reade <addr> <bytes>"),
             "readb" : (2, 2, "readb <addr> <bytes>"),
-            "readva": (2, 2, "readva <addr> <nVfyData>"),
-            "bpgm"  : (2, 2, "bpgm <addr> <value>"),
-            "erase" : (1, 1, "erase <sector_id>"),
+            #"readva": (2, 2, "readva [nxAddr:0] [nVfyData]"),
+            #"readvb": (2, 2, "readvb [nxAddr:0] [nVfyData]"),
+            "dpgm"  : (2, 2, "dpgm [nxAddr:0] [MAIN/NVR/ARRDN/ARRCOL]"),
+            "apgm"  : (2, 2, "apgm [nxAddr:0] [nVcg] [MAIN/NVR/ARRDN/ARRCOL]"),
+            "erase" : (0, 2, "erase [nNumSec:0] [nNumToErase:1] (defaults: 0, 1)"),
             "ce"    : (1, 1, "ce [on/off]"),
             "por"   : (0, 0, "por"),
             "h"     : (0, 0, "help"),
@@ -246,6 +257,43 @@ class TCPClient:
             raw = self._hex_to_bytes(src_token, PAYLOAD_BYTES)
         return base64.b64encode(raw).decode('ascii')
 
+    def _parse_reade(self, args):
+        # 1) nxAddr
+        if len(args) >= 1:
+            start_val = _int_from_token(args[0])
+        else:
+            start_val = 0
+        if not (0 <= start_val <= 1279):
+            raise ValueError("nxAddr out of range")
+
+        return str(start_val)
+ 
+    def _parse_readn(self, args):
+        # 1) nrTagStart
+        if len(args) >= 1:
+            start_val = _int_from_token(args[0])
+        else:
+            start_val = 0
+        if not (0 <= start_val <= 0xFFFF):
+            raise ValueError("nrTagStart out of range")
+
+        # 2) nrTagNum
+        if len(args) >= 2:
+            num_val = _int_from_token(args[1])
+        else:
+            num_val = 0
+        if not (0 <= num_val <= 128):
+            raise ValueError("nrTagNum out of range (1..128)")
+
+        # 3) nrReg
+        if len(args) >= 3:
+            reg_val = _int_from_token(args[2])
+        else:
+            reg_val = 0xFF
+        if not (0 <= reg_val <= 0xFF):
+            raise ValueError("nrReg out of range")
+
+        return str(start_val), str(num_val), f"0x{reg_val:X}"
     # -------------------------
     # APGM/DPGM argument parsing (0..4 args)
     # -------------------------
@@ -286,7 +334,33 @@ class TCPClient:
         pgm_b64 = self._prepare_b64_payload(pgm_token)
 
         return nx_addr_str, nvcg_str, repeat_str, pgm_b64
+    # -------------------------
+    # ERASE argument parsing (0..2 args)
+    # -------------------------
+    def _parse_erase_like(self, args):
+        """
+        Returns a tuple (nSectNumber, nNumToErase)
+        with validation and defaults applied; all returned as strings.
+        """
+        # 1) nxAddr
+        if len(args) >= 1:
+            nx_addr_val = _int_from_token(args[0])
+        else:
+            nx_addr_val = DEFAULT_NXADDR
+        if not (0 <= nx_addr_val <= 1280):
+            raise ValueError("nxAddr out of range (0..1280)")
+        nx_addr_str = str(nx_addr_val)  # send as decimal string
 
+        # 2) nVcg
+        if len(args) >= 2:
+            nvcg_val = _int_from_token(args[1])
+        else:
+            nvcg_val = 1
+        if not (0 <= nvcg_val <= 1280):
+            raise ValueError("nVcg out of range (0..1280)")
+        nvcg_str = _normalize_hex(nvcg_val)  # send as hex string "0x..."
+
+        return nx_addr_str, nvcg_str
     # -------------------------
     # command handling
     # -------------------------
@@ -318,6 +392,24 @@ class TCPClient:
                     # optional: send payload length explicitly for sanity
                     "payloadLen": str(PAYLOAD_BYTES)
                 }
+            elif cmd_name == "reade":
+                nxaddr_str = self._parse_reade(args)
+                payload = {
+                    "cmd": "reade",
+                    "args": [nxaddr_str]
+                }
+            elif cmd_name == "readn":
+                start_str, num_str, reg_str = self._parse_readn(args)
+                payload = {
+                    "cmd": "readn",
+                    "args": [start_str, num_str, reg_str]
+                }
+            elif cmd_name == "erase":
+                nx_addr_str, nvcg_str = self._parse_erase_like(args)
+                payload = {
+                    "cmd": cmd_name,
+                    "args": [nx_addr_str, nvcg_str]
+                }
             else:
                 # default pass-through
                 payload = {"cmd": cmd_name, "args": args}
@@ -333,8 +425,68 @@ class TCPClient:
 
         # Wait for one response (async RX thread fills the queue)
         resp = self._await_response()
-        print("rx:")
-        print(json.dumps(resp, indent=2) if isinstance(resp, dict) else resp)
+        print(f"rx : {resp}")
+
+        # If not JSON object, just print it
+        if not isinstance(resp, dict):
+            print(resp)
+            return
+
+        cmd = resp.get("cmd", "")
+        payload = resp.get("payload")
+
+        # Special handling for READN
+        if cmd == "readn" and payload:
+            raw = b64_to_bytes(payload)
+            if raw is None:
+                print(f"[!] Failed to decode {cmd} payload")
+                return
+
+            # Pretty hex dump
+            print(raw.hex())
+
+            # Convert to list of uint8
+            data = list(raw)
+
+            # Remove last 2 bytes
+            if len(data) >= 2:
+                data = data[:-2]
+
+            print(f"[readn] received {len(data)} valid bytes")
+
+            # ---- DRAW GRAPH ----
+            try:
+                import matplotlib.pyplot as plt
+
+                # X axis: 0 ~ len(data)-1 (expected 2047)
+                x = list(range(len(data)))
+
+                plt.figure(figsize=(10, 4))
+                plt.plot(x, data, marker='.', linestyle='-', color='blue')
+                plt.xlabel("Index (0~2047)")
+                plt.ylabel("Value (uint8)")
+                plt.title("readn Data Plot")
+                plt.grid(True)
+                plt.tight_layout()
+                plt.show()
+
+            except Exception as e:
+                print(f"[!] Graph error: {e}")
+
+            return
+
+        elif cmd == "reade" and payload:
+            raw = b64_to_bytes(payload)
+            if raw is None:
+                print(f"[!] Failed to decode {cmd} payload")
+                return
+            print(f"[{cmd}] received {len(raw)} bytes")
+            # Pretty hex dump
+            print(raw.hex())
+            return
+
+        # Default printing for other commands
+        print(json.dumps(resp, indent=2))
 
     def _send_json(self, data):
         try:
